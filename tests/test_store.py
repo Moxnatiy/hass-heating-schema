@@ -49,6 +49,13 @@ def test_a_schema_validates_and_gains_defaults() -> None:
     assert clean["nodes"][0]["rotation"] == 0
     assert clean["nodes"][0]["params"] == {}
     assert clean["pipes"][0]["dn"] == ""
+    assert (clean["nodes"][0]["scale"], clean["nodes"][0]["flip_y"]) == (1, False)
+
+
+def test_an_element_keeps_its_scale_and_vertical_mirror() -> None:
+    nodes = [{"id": "a", "type": "pump", "x": 0, "y": 0, "scale": 1.5, "flip_y": True}]
+    clean = validate(schema(nodes=nodes, pipes=[]))
+    assert (clean["nodes"][0]["scale"], clean["nodes"][0]["flip_y"]) == (1.5, True)
 
 
 def test_the_server_writes_the_update_time_itself() -> None:
@@ -75,6 +82,7 @@ def test_the_server_writes_the_update_time_itself() -> None:
         },
         {"nodes": [{"id": "a b", "type": "pump", "x": 0, "y": 0}]},
         {"nodes": [{"id": "a", "type": "pump", "x": 0, "y": 0, "rotation": 45}]},
+        {"nodes": [{"id": "a", "type": "pump", "x": 0, "y": 0, "scale": 7}]},
         {
             "nodes": [
                 {

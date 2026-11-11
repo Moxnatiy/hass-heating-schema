@@ -2,7 +2,8 @@
 //
 // A document:
 //   { id, name, version, settings,
-//     nodes: [{ id, type, x, y, rotation, flip, label, params, bindings }],
+//     nodes: [{ id, type, x, y, rotation, flip, flip_y, scale, label, params,
+//               bindings }],
 //     pipes: [{ id, from: {node, port}, to: {node, port}, medium, dn, label,
 //               points: [[x, y], …], bindings }] }
 //
@@ -11,7 +12,7 @@
 // the router finds a path.
 
 import { resolve, defaultParams } from "../elements/index.js";
-import { toWorld, worldSide, worldBox, snap } from "./geometry.js";
+import { toWorld, worldSide, worldBox, snap, SCALES } from "./geometry.js";
 import { MEDIA, familiesCompatible, mediumFits } from "./media.js";
 import { checkEntity, KINDS } from "./bindings.js";
 
@@ -43,6 +44,8 @@ export function normalize(doc) {
       y: Number(node.y) || 0,
       rotation: [0, 90, 180, 270].includes(node.rotation) ? node.rotation : 0,
       flip: Boolean(node.flip),
+      flip_y: Boolean(node.flip_y),
+      scale: SCALES.includes(node.scale) ? node.scale : 1,
       label: node.label || "",
       params: { ...defaultParams(node.type), ...(node.params || {}) },
       bindings: { ...(node.bindings || {}) },
@@ -98,6 +101,8 @@ export function createNode(type, x, y) {
     y: 0,
     rotation: 0,
     flip: false,
+    flip_y: false,
+    scale: 1,
     label: "",
     params: defaultParams(type),
     bindings: {},

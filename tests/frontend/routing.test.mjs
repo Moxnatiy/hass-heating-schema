@@ -3,8 +3,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { route, moveLeg } from "../../custom_components/heating_schema/frontend/core/router.js";
-import { normalize, resolveAll } from "../../custom_components/heating_schema/frontend/core/model.js";
-import { layPipe, branchPipe } from "../../custom_components/heating_schema/frontend/core/edits.js";
+import { normalize, resolveAll, portWorld } from "../../custom_components/heating_schema/frontend/core/model.js";
+import { layPipe, branchPipe, scaleNodes } from "../../custom_components/heating_schema/frontend/core/edits.js";
+import { worldSide, worldBox } from "../../custom_components/heating_schema/frontend/core/geometry.js";
 import { computeRoutes } from "../../custom_components/heating_schema/frontend/core/render.js";
 import { sampleDoc } from "./fixtures.mjs";
 
@@ -65,6 +66,58 @@ test("a pipe is stored from outlet to inlet whichever end it was drawn from", ()
   const { pipe } = layPipe(doc, resolveAll(doc), { node: "rad", port: "in" }, { node: "pump", port: "out" });
   assert.deepEqual(pipe.from, { node: "pump", port: "out" });
   assert.equal(pipe.medium, "heating_supply");
+});
+
+test("a scaled element's ports move with it and its pipes end on them", () => {
+  const doc = normalize({
+    id: "s",
+    name: "s",
+    nodes: [
+      { id: "boiler", type: "boiler", x: 0, y: 0, scale: 2 },
+      { id: "pump", type: "pump", x: 400, y: 30, scale: 0.5 },
+    ],
+    pipes: [{ id: "p", from: { node: "boiler", port: "supply_out" }, to: { node: "pump", port: "in" } }],
+  });
+  const defs = resolveAll(doc);
+  const at = (node, id) => {
+    const p = portWorld(node, defs.get(node.id), id);
+    return [p.x, p.y];
+  };
+  assert.deepEqual(at(doc.nodes[0], "supply_out"), [240, 60]);
+  assert.deepEqual(at(doc.nodes[1], "in"), [400, 45]);
+  const points = computeRoutes(doc, defs).get("p");
+  assert.deepEqual([points[0].x, points[0].y], [240, 60]);
+  assert.deepEqual([points.at(-1).x, points.at(-1).y], [400, 45]);
+  assert.ok(orthogonal(points));
+});
+
+test("mirroring top to bottom turns a port's side and keeps the box", () => {
+  const doc = normalize({ id: "f", name: "f", nodes: [{ id: "v", type: "valve_3way", x: 0, y: 0, flip_y: true }], pipes: [] });
+  const def = resolveAll(doc).get("v");
+  const node = doc.nodes[0];
+  const b = portWorld(node, def, "B");
+  assert.deepEqual([b.x, b.y, b.side], [40, 0, "t"]);
+  assert.equal(worldSide(node, "b"), "t");
+  assert.deepEqual(worldBox(node, def), { x: 0, y: 0, w: 80, h: 80 });
+});
+
+test("resizing keeps an element's centre and steps through the scales", () => {
+  const doc = normalize({ id: "z", name: "z", nodes: [{ id: "b", type: "boiler", x: 100, y: 100 }], pipes: [] });
+  const defs = resolveAll(doc);
+  const centre = () => {
+    const box = worldBox(doc.nodes[0], defs.get("b"));
+    return [box.x + box.w / 2, box.y + box.h / 2];
+  };
+  const before = centre();
+  scaleNodes(doc, defs, new Set(["b"]), "up");
+  assert.equal(doc.nodes[0].scale, 1.25);
+  const after = centre();
+  assert.ok(Math.abs(after[0] - before[0]) <= 5 && Math.abs(after[1] - before[1]) <= 5);
+  for (let i = 0; i < 9; i += 1) scaleNodes(doc, defs, new Set(["b"]), "up");
+  assert.equal(doc.nodes[0].scale, 2);
+  scaleNodes(doc, defs, new Set(["b"]), 0.5);
+  assert.equal(doc.nodes[0].scale, 0.5);
+  assert.equal(doc.nodes[0].x % 10, 0);
 });
 
 test("a branch splits the pipe at a junction and keeps its direction", () => {

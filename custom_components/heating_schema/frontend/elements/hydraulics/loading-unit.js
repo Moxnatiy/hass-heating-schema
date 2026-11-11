@@ -8,10 +8,14 @@
 // quickly and does not sweat tar; above it, the valve opens to the tank's cold
 // return and the tank charges. The ports line up with a boiler's, supply over
 // return, so a boiler on the left joins it with straight pipes.
+//
+// With three connections ("ports"), as on units of the ESBE LTC kind, there
+// is no way through to the tank: the boiler's supply reaches the bypass only,
+// and the tank's supply branches off the boiler's pipe with a tee outside.
 
 import { defineElement } from "../registry.js";
 import { port } from "../kit/ports.js";
-import { num, bind } from "../kit/fields.js";
+import { num, select, bind } from "../kit/fields.js";
 import { circle, line, poly, rect, stub, bodyClass } from "../kit/svg.js";
 import { numberOf, pumpSpeed } from "../kit/readings.js";
 
@@ -19,6 +23,9 @@ import { numberOf, pumpSpeed } from "../kit/readings.js";
 const TRIANGLE = "-10,0 5,-8.66 5,8.66";
 /** A full turn of the triangle at 100 % speed, in seconds. */
 const TURN = 2.4;
+
+/** Four connections: the boiler's supply runs on through the unit to the tank. */
+const throughToTank = (node) => node.params.ports !== "3";
 
 /**
  * Whether the tank side is open: true or false from the boiler's water
@@ -34,13 +41,16 @@ export default defineElement({
   category: "hydraulics",
   w: 120,
   h: 100,
-  ports: () => [
-    port("boiler_flow", 0, 30, "l", "in", "heating", "supply"),
-    port("boiler_return", 0, 70, "l", "out", "heating", "return"),
-    port("tank_flow", 120, 30, "r", "out", "heating", "supply"),
-    port("tank_return", 120, 70, "r", "in", "heating", "return"),
-  ],
-  params: [num("opening_temp", 72, "°C", 45, 95)],
+  ports(node) {
+    const list = [
+      port("boiler_flow", 0, 30, "l", "in", "heating", "supply"),
+      port("boiler_return", 0, 70, "l", "out", "heating", "return"),
+      port("tank_return", 120, 70, "r", "in", "heating", "return"),
+    ];
+    if (throughToTank(node)) list.push(port("tank_flow", 120, 30, "r", "out", "heating", "supply"));
+    return list;
+  },
+  params: [num("opening_temp", 72, "°C", 45, 95), select("ports", "4", ["4", "3"])],
   bindings: () => [
     bind("running", "running", false),
     bind("speed", "percent", false),
@@ -50,10 +60,8 @@ export default defineElement({
     bind("alarm", "alarm", false),
   ],
   passages(node, live) {
-    const pairs = [
-      ["boiler_flow", "tank_flow"],
-      ["boiler_flow", "boiler_return"],
-    ];
+    const pairs = [["boiler_flow", "boiler_return"]];
+    if (throughToTank(node)) pairs.push(["boiler_flow", "tank_flow"]);
     if (charging(node, live) !== false) pairs.push(["tank_return", "boiler_return"]);
     return pairs;
   },
@@ -71,8 +79,7 @@ export default defineElement({
       rect(2, 2, 116, 96, 8, "hs-body") +
       // Straight through from the boiler to the tank, and the bypass down.
       stub(0, 30, 6, 30) +
-      stub(114, 30, 120, 30) +
-      line(6, 30, 114, 30) +
+      (throughToTank(node) ? stub(114, 30, 120, 30) + line(6, 30, 114, 30) : line(6, 30, 84, 30)) +
       line(84, 30, 84, 58) +
       // The thermostatic valve: bypass from above, tank from the right.
       stub(114, 70, 120, 70) +

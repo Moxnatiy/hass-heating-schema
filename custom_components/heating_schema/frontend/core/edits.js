@@ -5,7 +5,7 @@
 // them inside EditorState.commit(), which makes them undoable; the tests run
 // them directly.
 
-import { snap, GRID } from "./geometry.js";
+import { snap, GRID, SCALES, scaleOf } from "./geometry.js";
 import { MEDIA, mediumFor, mediumFits } from "./media.js";
 import { canConnect, portSpec, portWorld, createNode, mediumThrough, mixingAllowed, uid } from "./model.js";
 
@@ -118,9 +118,37 @@ export function rotateNodes(doc, ids, step = 90) {
   resetPipesOf(doc, ids);
 }
 
-/** Mirror elements left to right. */
-export function flipNodes(doc, ids) {
-  for (const node of doc.nodes) if (ids.has(node.id)) node.flip = !node.flip;
+/** Mirror elements left to right ("x") or top to bottom ("y"). */
+export function flipNodes(doc, ids, axis = "x") {
+  const key = axis === "y" ? "flip_y" : "flip";
+  for (const node of doc.nodes) if (ids.has(node.id)) node[key] = !node[key];
+  resetPipesOf(doc, ids);
+}
+
+/**
+ * Draw elements at another size, each about its own centre.
+ *
+ * `to` is a scale from SCALES, or a step through them: "up" or "down". An
+ * element already at the end of the steps keeps its size.
+ */
+export function scaleNodes(doc, defs, ids, to) {
+  for (const node of doc.nodes) {
+    if (!ids.has(node.id)) continue;
+    const def = defs.get(node.id);
+    if (!def) continue;
+    const now = scaleOf(node);
+    const i = SCALES.indexOf(now);
+    let next = to;
+    if (to === "up") next = SCALES[Math.min(SCALES.length - 1, i + 1)];
+    if (to === "down") next = SCALES[Math.max(0, i - 1)];
+    if (!SCALES.includes(next) || next === now) continue;
+    // Keep the centre where it was, the corner on the grid.
+    const cx = node.x + (def.w * now) / 2;
+    const cy = node.y + (def.h * now) / 2;
+    node.scale = next;
+    node.x = snap(cx - (def.w * next) / 2);
+    node.y = snap(cy - (def.h * next) / 2);
+  }
   resetPipesOf(doc, ids);
 }
 

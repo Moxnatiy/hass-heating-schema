@@ -3,7 +3,7 @@
 
 import { GRID } from "../core/geometry.js";
 import { createNode } from "../core/model.js";
-import { rotateNodes, flipNodes, removeSelection, moveNodes, pasteClip } from "../core/edits.js";
+import { rotateNodes, flipNodes, scaleNodes, removeSelection, moveNodes, pasteClip } from "../core/edits.js";
 
 export class Commands {
   constructor(state) {
@@ -27,9 +27,16 @@ export class Commands {
     if (ids.size) this.state.commit((doc) => rotateNodes(doc, ids, step));
   }
 
-  flip() {
+  /** Mirror left to right ("x") or top to bottom ("y"). */
+  flip(axis = "x") {
     const ids = this.state.selection.nodes;
-    if (ids.size) this.state.commit((doc) => flipNodes(doc, ids));
+    if (ids.size) this.state.commit((doc) => flipNodes(doc, ids, axis));
+  }
+
+  /** A scale from SCALES, or a step: "up" or "down". */
+  scale(to) {
+    const ids = this.state.selection.nodes;
+    if (ids.size) this.state.commit((doc) => scaleNodes(doc, this.state.defs, ids, to));
   }
 
   remove() {

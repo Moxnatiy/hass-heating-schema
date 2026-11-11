@@ -103,6 +103,11 @@ export const PANEL_CSS = `
   .hs-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
   .hs-actions button { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--secondary-background-color); cursor: pointer; font-size: 13px; }
   .hs-danger { color: var(--error-color, #e53935) !important; }
+  .hs-tools { align-items: center; gap: 2px; }
+  .hs-tools .hs-icon-btn { min-width: 30px; min-height: 32px; padding: 3px !important; color: inherit; }
+  .hs-tools .hs-icon-btn ha-icon { --mdc-icon-size: 18px; }
+  .hs-tool-group { display: inline-flex; align-items: center; gap: 1px; }
+  .hs-scale { min-width: 36px; text-align: center; font-size: 12px; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; }
   .hs-ports, .hs-problems { list-style: none; padding: 0; margin: 0; font-size: 13px; }
   .hs-ports li { padding: 5px 0; border-bottom: 1px solid var(--divider-color); }
   .hs-ports em { font-style: normal; font-size: 11px; color: var(--secondary-text-color); }

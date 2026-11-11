@@ -72,7 +72,9 @@ an element by name.
 - **Select** an element by clicking it. Shift+click adds to the selection, and
   a frame dragged over the empty sheet selects everything inside it.
 - **Move** the selection by dragging it or with the arrow keys.
-- **Rotate** with **R**, **mirror** with **M**.
+- **Rotate** with **R**, **mirror** left to right with **M** or top to bottom
+  with **Shift+M**, make it **larger or smaller** with **+** and **−**
+  (50 % to 200 %). The same tools are the icons at the top of the inspector.
 
 ![The editor: palette on the left, the hot water tank selected, its settings on the right](docs/images/editor.png)
 
@@ -83,8 +85,11 @@ What the parameters change depends on the element. Some examples:
   second cold inlet, a circulation return, a drain connection and an electric
   heater.
 - **Manifold:** the number of loops; the heating water fed from the left, the
-  right or both ends; all connections pointing down, or the supplies up and
-  the returns down.
+  right or both ends; all connections pointing down, the supplies up and the
+  returns down, or pairs on both sides, which halves the manifold's length.
+- **Loading unit:** four connections, through to the tank (Laddomat 21), or
+  three, the bypass only, with a tee to the tank outside (ESBE LTC); the
+  thermostat's opening temperature.
 - **Pump:** how it is controlled, and whether its impeller or its triangle
   turns while it runs.
 - **Radiator:** side, cross or bottom connection.
@@ -185,7 +190,8 @@ height: 400               # optional; without it the card keeps the drawing's pr
 | --- | --- |
 | Delete, Backspace | delete the selection |
 | R / Shift+R | rotate clockwise / anticlockwise |
-| M | mirror |
+| M / Shift+M | mirror left to right / top to bottom |
+| + / − | larger / smaller |
 | Arrows (with Shift) | move by one grid step (by five) |
 | Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y | undo, redo |
 | Ctrl+C, Ctrl+V, Ctrl+D | copy, paste, duplicate |

@@ -21,7 +21,7 @@ export const SCHEMA_CSS = `
   .hs-value { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .hs-stale, .hs-stale text { opacity: 0.45; }
   .hs-small { font-size: 10px; fill: var(--hs-muted); }
-  .hs-number { font-size: 14px; fill: var(--hs-muted); }
+  .hs-number { font-size: 14px; fill: var(--hs-muted); paint-order: stroke; stroke: var(--hs-bg); stroke-width: 4px; stroke-linejoin: round; }
   .hs-port-tag { font-size: 12px; font-weight: 500; }
   .hs-gauge-text { font-size: 11px; font-weight: 500; }
   .hs-icon { font-size: 18px; fill: var(--hs-cold); }
@@ -34,6 +34,7 @@ export const SCHEMA_CSS = `
   .hs-body, .hs-gauge, .hs-badge {
     fill: var(--hs-body); stroke: color-mix(in srgb, var(--hs-ink) 35%, transparent); stroke-width: 2;
   }
+  .hs-hit { fill: transparent; stroke: none; pointer-events: all; }
   .hs-frame { fill: none; stroke: var(--hs-run); stroke-width: 1.5; stroke-dasharray: 5 4; opacity: 0.8; }
   .hs-running { stroke: var(--hs-run); stroke-width: 2.5; }
   .hs-alarm { stroke: var(--hs-alarm) !important; stroke-width: 2.5; animation: hs-blink 1s steps(2) infinite; }

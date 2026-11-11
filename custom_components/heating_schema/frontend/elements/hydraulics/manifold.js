@@ -3,9 +3,12 @@
 // left, return on the right, as on a real manifold. Each loop's actuator, on
 // the return, can be bound; a closed loop takes no water.
 //
-// Two looks ("style"): every loop's pair pointing down, as above, or the hot
+// Three looks ("style"): every loop's pair pointing down, as above; the hot
 // supplies going up from the supply bar and the cold returns down from the
-// return bar. The port ids are the same in both, so the pipes follow.
+// return bar; or pairs on both sides, odd loops down and even loops up, two
+// loops to a place, which halves the manifold's length. In an upward pair the
+// return passes the supply bar on its way up. The port ids are the same in
+// every look, so the pipes follow.
 //
 // The heating water comes in from the left, from the right, or from both
 // ends ("feed"). Switching sides keeps the port ids, so the pipes follow. With
@@ -23,11 +26,16 @@ const HEIGHT = 120;
 const SUPPLY_Y = 30;
 const RETURN_Y = 80;
 const loops = (node) => Math.max(1, node.params.outlets || 1);
-const width = (node) => SPACING * loops(node) + 40;
 const split = (node) => node.params.style === "split";
+const twoSided = (node) => node.params.style === "both";
+/** Where a loop sits along the bars: two loops share a place when two-sided. */
+const place = (node, k) => (twoSided(node) ? Math.ceil(k / 2) : k);
+const width = (node) => SPACING * place(node, loops(node)) + 40;
+/** A two-sided manifold's even loops point up. */
+const up = (node, k) => twoSided(node) && k % 2 === 0;
 // Side by side under the bars; or one above the other when split.
-const supplyX = (node, k) => (split(node) ? SPACING * k : SPACING * k - 20);
-const returnX = (node, k) => (split(node) ? SPACING * k : SPACING * k + 20);
+const supplyX = (node, k) => (split(node) ? SPACING * k : SPACING * place(node, k) - 20);
+const returnX = (node, k) => (split(node) ? SPACING * k : SPACING * place(node, k) + 20);
 
 /** The sides the heating water connects on. */
 function feedSides(node) {
@@ -54,19 +62,17 @@ export default defineElement({
       );
     }
     for (let k = 1; k <= loops(node); k += 1) {
-      ports.push(
-        split(node)
-          ? port(`out_${k}`, supplyX(node, k), 0, "t", "out", "heating", "supply")
-          : port(`out_${k}`, supplyX(node, k), HEIGHT, "b", "out", "heating", "supply")
-      );
-      ports.push(port(`ret_${k}`, returnX(node, k), HEIGHT, "b", "in", "heating", "return"));
+      const outUp = split(node) || up(node, k);
+      ports.push(port(`out_${k}`, supplyX(node, k), outUp ? 0 : HEIGHT, outUp ? "t" : "b", "out", "heating", "supply"));
+      const retUp = up(node, k);
+      ports.push(port(`ret_${k}`, returnX(node, k), retUp ? 0 : HEIGHT, retUp ? "t" : "b", "in", "heating", "return"));
     }
     return ports;
   },
   params: [
     num("outlets", 4, "", 1, 12),
     select("feed", "left", ["left", "right", "both"]),
-    select("style", "down", ["down", "split"]),
+    select("style", "down", ["down", "split", "both"]),
   ],
   bindings(node) {
     const list = [
@@ -111,6 +117,17 @@ export default defineElement({
         // Hot up from the supply bar, cold down from the return bar.
         body += stub(out, 0, out, 22) + stub(ret, 88, ret, HEIGHT) + rect(ret - 8, 94, 16, 12, 3, state);
         ctx.text(SPACING * k - 18, 55, String(k), "hs-number");
+      } else if (up(node, k)) {
+        // The pair upside down: the return passes the supply bar going up.
+        body += stub(out, 0, out, 22);
+        body += stub(ret, 72, ret, 44) + line(ret - 4, 40, ret + 4, 40, "hs-line") + stub(ret, 0, ret, 16);
+        body += rect(ret - 8, 4, 16, 12, 3, state);
+        // The two numbers of a place, centred between the bars.
+        ctx.text(SPACING * place(node, k), 48, String(k), "hs-number");
+      } else if (twoSided(node)) {
+        body += stub(out, 38, out, 66) + line(out - 4, 70, out + 4, 70, "hs-line") + stub(out, 94, out, HEIGHT);
+        body += stub(ret, 88, ret, HEIGHT) + rect(ret - 8, 94, 16, 12, 3, state);
+        ctx.text(SPACING * place(node, k), 62, String(k), "hs-number");
       } else {
         // The supply outlet passes the return bar on its way down.
         body += stub(out, 38, out, 66) + line(out - 4, 70, out + 4, 70, "hs-line") + stub(out, 94, out, HEIGHT);

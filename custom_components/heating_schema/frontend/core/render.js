@@ -5,7 +5,7 @@
 // the fans and the water in the other pipes keep moving instead of jumping
 // back to the start of their animation on every sensor update.
 
-import { toWorld, worldBox, nodeTransform } from "./geometry.js";
+import { toWorld, worldBox, nodeTransform, scaleOf } from "./geometry.js";
 import { route, pathData } from "./router.js";
 import { MEDIA } from "./media.js";
 import { portWorld } from "./model.js";
@@ -16,6 +16,9 @@ const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 const EMPTY_LIVE = { values: {}, on: null, alarm: false, flowing: false };
+
+/** How far above its element a label's centre sits. */
+const LABEL_GAP = 17;
 
 export class SchemaRenderer {
   /**
@@ -125,22 +128,32 @@ export class SchemaRenderer {
     const body = def.draw(def.node, live, ctx, def);
     const transform = nodeTransform(node, def);
 
+    // The drawing's own letters grow and shrink with it, upright; the label
+    // and the live values keep their size, to stay readable.
+    const s = scaleOf(node);
     let upright = "";
     for (const item of texts) {
       const at = toWorld(node, def, item.x, item.y);
-      upright += `<text class="hs-text ${item.cls}" x="${at.x}" y="${at.y}" text-anchor="${item.anchor}">${esc(item.value)}</text>`;
+      const sized = s === 1 ? "" : ` transform="translate(${at.x} ${at.y}) scale(${s}) translate(${-at.x} ${-at.y})"`;
+      upright += `<text class="hs-text ${item.cls}" x="${at.x}" y="${at.y}" text-anchor="${item.anchor}"${sized}>${esc(item.value)}</text>`;
     }
     upright += this._label(node, def);
     if (this.options.showValues) upright += this._values(node, def, live);
     const ports = this.options.editing || this.options.showPorts ? this._ports(node, def, connected) : "";
-    return `<g class="hs-symbol${live.flowing ? " hs-flowing-node" : ""}" transform="${transform}">${body}</g>${upright}${ports}`;
+    // An invisible box under the drawing, so an element with an open or
+    // transparent body is grabbed anywhere inside it, not only on its lines.
+    // The ports come after it and stay on top.
+    const hit = `<rect class="hs-hit" width="${def.w}" height="${def.h}"/>`;
+    return `<g class="hs-symbol${live.flowing ? " hs-flowing-node" : ""}" transform="${transform}">${hit}${body}</g>${upright}${ports}`;
   }
 
   _label(node, def) {
     if (def.hideLabel) return "";
     const box = worldBox(node, def);
     const name = node.label || elementName(node.type);
-    return `<text class="hs-label" text-anchor="middle" x="${box.x + box.w / 2}" y="${box.y - 10}">${esc(name)}</text>`;
+    // Text is centred on its y: high enough that the letters and their halo
+    // clear the ports on the element's top edge.
+    return `<text class="hs-label" text-anchor="middle" x="${box.x + box.w / 2}" y="${box.y - LABEL_GAP}">${esc(name)}</text>`;
   }
 
   /**

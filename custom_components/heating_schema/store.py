@@ -36,6 +36,8 @@ COORD = vol.All(vol.Coerce(float), vol.Range(min=-1e6, max=1e6))
 #: A binding names one entity; the editor checks that it is of the right kind.
 ENTITY_ID = vol.All(str, vol.Match(re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+$")))
 SCALAR = vol.Any(None, bool, int, float, TEXT)
+#: The sizes an element may be drawn at, as the editor offers them.
+SCALES = (0.5, 0.75, 1.0, 1.25, 1.5, 2.0)
 
 BINDINGS = vol.Schema({ID: vol.Any(None, "", ENTITY_ID)})
 PARAMS = vol.Schema({ID: SCALAR})
@@ -48,6 +50,8 @@ NODE = vol.Schema(
         vol.Required("y"): COORD,
         vol.Optional("rotation", default=0): vol.In([0, 90, 180, 270]),
         vol.Optional("flip", default=False): bool,
+        vol.Optional("flip_y", default=False): bool,
+        vol.Optional("scale", default=1): vol.All(vol.Coerce(float), vol.In(SCALES)),
         vol.Optional("label", default=""): TEXT,
         vol.Optional("params", default=dict): PARAMS,
         vol.Optional("bindings", default=dict): BINDINGS,

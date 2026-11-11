@@ -85,3 +85,13 @@ for (const type of ELEMENT_TYPES) {
     });
   }
 }
+
+test("a two-sided manifold puts odd loops down and even loops up, two to a place", () => {
+  const def = resolve({ id: "m", type: "manifold", x: 0, y: 0, params: { outlets: 5, style: "both" } });
+  const at = (id) => def.ports.find((p) => p.id === id);
+  assert.equal(def.w, 80 * 3 + 40);
+  for (const k of [1, 3, 5]) assert.deepEqual([at(`out_${k}`).side, at(`ret_${k}`).side], ["b", "b"], `loop ${k}`);
+  for (const k of [2, 4]) assert.deepEqual([at(`out_${k}`).side, at(`ret_${k}`).side], ["t", "t"], `loop ${k}`);
+  // A pair up and a pair down share a place, supply on the left of each.
+  assert.deepEqual([at("out_1").x, at("ret_1").x, at("out_2").x, at("ret_2").x], [60, 100, 60, 100]);
+});

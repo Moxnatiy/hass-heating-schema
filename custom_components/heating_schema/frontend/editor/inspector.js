@@ -13,6 +13,8 @@ import { candidates, checkEntity, readBinding } from "../core/bindings.js";
 import { MEDIUM_IDS } from "../core/media.js";
 import { problems } from "../core/model.js";
 import { t, has, elementName, portName, bindingName } from "../core/i18n.js";
+import { scaleOf } from "../core/geometry.js";
+import { iconButton } from "./icon.js";
 
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -217,7 +219,7 @@ export class Inspector {
       <p class="hs-route">${esc(t("inspector.from_to", { from: name(pipe.from), to: name(pipe.to) }))}</p>
       <div class="hs-actions">
         <button data-action="reset-route">${t("inspector.reset_route")}</button>
-        <button data-action="delete" class="hs-danger">${t("ui.delete_selection")}</button>
+        ${iconButton("delete", `${t("ui.delete_selection")} (Del)`, "delete", "🗑", "hs-danger")}
       </div>
       <label class="hs-field"><span>${t("inspector.medium")}</span><select data-pipe-field="medium" data-key="pipe.medium">${media}</select></label>
       <label class="hs-field"><span>${t("inspector.dn")}</span>
@@ -231,12 +233,21 @@ export class Inspector {
   }
 
   _actions() {
+    const scales = new Set(this.state.selectedNodes().map(scaleOf));
+    const scale = scales.size === 1 ? `${Math.round([...scales][0] * 100)} %` : "—";
+    const tip = (key, keys) => `${t(key)} (${keys})`;
     return `
-      <div class="hs-actions">
-        <button data-action="rotate" title="R">${t("ui.rotate")}</button>
-        <button data-action="flip" title="M">${t("ui.flip")}</button>
-        <button data-action="duplicate" title="Ctrl+D">${t("ui.duplicate_selection")}</button>
-        <button data-action="delete" class="hs-danger" title="Del">${t("ui.delete_selection")}</button>
+      <div class="hs-actions hs-tools">
+        ${iconButton("rotate", tip("ui.rotate", "R"), "rotate-right", "↻")}
+        ${iconButton("flip", tip("ui.flip", "M"), "flip-horizontal", "⇋")}
+        ${iconButton("flip-y", tip("ui.flip_y", "Shift+M"), "flip-vertical", "⇵")}
+        <span class="hs-tool-group">
+          ${iconButton("smaller", tip("ui.smaller", "−"), "magnify-minus-outline", "−")}
+          <span class="hs-scale" title="${esc(t("ui.scale"))}">${scale}</span>
+          ${iconButton("larger", tip("ui.larger", "+"), "magnify-plus-outline", "+")}
+        </span>
+        ${iconButton("duplicate", tip("ui.duplicate_selection", "Ctrl+D"), "content-copy", "⧉")}
+        ${iconButton("delete", tip("ui.delete_selection", "Del"), "delete", "🗑", "hs-danger")}
       </div>`;
   }
 
@@ -323,7 +334,10 @@ export class Inspector {
     if (!button) return;
     const action = button.dataset.action;
     if (action === "rotate") this.commands.rotate();
-    else if (action === "flip") this.commands.flip();
+    else if (action === "flip") this.commands.flip("x");
+    else if (action === "flip-y") this.commands.flip("y");
+    else if (action === "smaller") this.commands.scale("down");
+    else if (action === "larger") this.commands.scale("up");
     else if (action === "duplicate") this.commands.duplicate();
     else if (action === "delete") this.commands.remove();
     else if (action === "reset-route") this.commands.resetRoute(this.state.selection.pipe);

@@ -92,6 +92,40 @@ test("a loading unit warms its boiler through the bypass, then charges the tank"
   assert.deepEqual(flowing(doc, states(false, 80)), []);
 });
 
+test("a three-port loading unit charges the tank through a tee outside it", () => {
+  const doc = normalize({
+    id: "l3",
+    name: "three ports",
+    nodes: [
+      { id: "boiler", type: "boiler", x: 0, y: 0, params: { fuel: "solid", internal_pump: false } },
+      { id: "tee", type: "junction", x: 160, y: 20 },
+      {
+        id: "lu",
+        type: "loading_unit",
+        x: 240,
+        y: 0,
+        params: { opening_temp: 72, ports: "3" },
+        bindings: { running: "switch.lu", from_boiler_temp: "sensor.hot" },
+      },
+      { id: "buf", type: "buffer_tank", x: 440, y: 0 },
+    ],
+    pipes: [
+      { id: "f", from: { node: "boiler", port: "supply_out" }, to: { node: "tee", port: "w" } },
+      { id: "b", from: { node: "tee", port: "e" }, to: { node: "lu", port: "boiler_flow" } },
+      { id: "t", from: { node: "tee", port: "n" }, to: { node: "buf", port: "l1" } },
+      { id: "u", from: { node: "buf", port: "l2" }, to: { node: "lu", port: "tank_return" } },
+      { id: "r", from: { node: "lu", port: "boiler_return" }, to: { node: "boiler", port: "return_in" } },
+    ],
+  });
+  assert.ok(!resolveAll(doc).get("lu").ports.some((p) => p.id === "tank_flow"));
+  const states = (hot) => ({
+    "switch.lu": entity("switch.lu", "on"),
+    "sensor.hot": entity("sensor.hot", hot, { unit_of_measurement: "°C", device_class: "temperature" }),
+  });
+  assert.deepEqual(flowing(doc, states(60)), ["b", "f", "r"]);
+  assert.deepEqual(flowing(doc, states(80)), ["b", "f", "r", "t", "u"]);
+});
+
 test("an open tap draws water from the mains through the tank", () => {
   const doc = normalize({
     id: "w",

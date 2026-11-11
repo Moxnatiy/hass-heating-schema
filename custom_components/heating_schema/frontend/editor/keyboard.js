@@ -2,7 +2,8 @@
 //
 //   Delete, Backspace     delete the selection
 //   R / Shift+R           rotate clockwise / anticlockwise
-//   M                     mirror
+//   M / Shift+M           mirror left to right / top to bottom
+//   + / −                 larger / smaller
 //   arrows                move by one grid step; with Shift, by five
 //   Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y    undo, redo
 //   Ctrl+C, Ctrl+V, Ctrl+D          copy, paste, duplicate
@@ -69,7 +70,15 @@ export function handleKey(e, host) {
     return true;
   }
   if (key === "m") {
-    commands.flip();
+    commands.flip(e.shiftKey ? "y" : "x");
+    return true;
+  }
+  if (e.key === "+" || e.key === "=") {
+    commands.scale("up");
+    return true;
+  }
+  if (e.key === "-" || e.key === "_") {
+    commands.scale("down");
     return true;
   }
   return false;

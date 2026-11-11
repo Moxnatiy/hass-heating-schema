@@ -17,11 +17,11 @@ import { Inspector } from "./editor/inspector.js";
 import { handleKey } from "./editor/keyboard.js";
 import { CANVAS_CSS, PANEL_CSS } from "./editor/styles.js";
 import { askText, confirmDialog, DIALOG_CSS } from "./editor/dialog.js";
+import { icon } from "./editor/icon.js";
 
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const icon = (name, fallback) => `<ha-icon icon="mdi:${name}"></ha-icon><span class="hs-fallback">${fallback}</span>`;
 
 class HeatingSchemaPanel extends HTMLElement {
   constructor() {
