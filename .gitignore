@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+node_modules/
+.DS_Store
+# A local Home Assistant for trying the integration
+.ha-config/
+# Local tool settings
+.claude/

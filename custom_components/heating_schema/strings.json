@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Heating Schema",
+        "description": "Adds the Heating Schema panel to the sidebar, where you draw your heating system, and the Heating Schema card for dashboards."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Heating Schema is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sidebar",
+        "data": {
+          "sidebar_title": "Name in the sidebar",
+          "sidebar_icon": "Icon"
+        }
+      }
+    }
+  }
+}

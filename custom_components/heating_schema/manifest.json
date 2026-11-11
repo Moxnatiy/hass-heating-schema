@@ -1,0 +1,22 @@
+{
+  "domain": "heating_schema",
+  "name": "Heating Schema",
+  "codeowners": [
+    "@Moxnatiy"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http",
+    "lovelace",
+    "panel_custom",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/Moxnatiy/hass-heating-schema",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Moxnatiy/hass-heating-schema/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
