@@ -4,7 +4,7 @@
 //
 //   type        id saved in schemas; never change it once released
 //   category    palette group: sources, storage, hydraulics, valves,
-//               consumers, water, sensors, annotations
+//               consumers, water, sensors, annotations, drawing
 //   w, h        the box, multiples of 20 so it rotates on the grid;
 //               or size(node) → { w, h } when parameters change it
 //   ports(node)            → [port(…)]                 kit/ports.js
@@ -23,7 +23,11 @@
 //   sink(node, live)    → true when water leaves here (an open tap)
 //   panel               { x, y, align } where listed values go inside the body
 //   spots / spotsFor(def)  { bindingKey: [x, y] } values shown at a place
-//   hideLabel           no name above the element
+//   hideLabel           no name above the element; or hideLabel(node) → true
+//                       to hide it case by case (a frame shows a given name)
+//   under               drawn under the pipes and the elements (a drawing)
+//   outlineHit          grabbed only where draw() puts an hs-hit-stroke path,
+//                       not anywhere in the box (a frame around elements)
 //
 // draw() receives ctx = { uid, connected: Set(port ids), text(x, y, value,
 // cls, anchor) }. Text is drawn upright whatever the element's rotation, so

@@ -12,11 +12,12 @@ export const KINDS = {
   // On or off: a burner, a compressor, a pump, a heating rod.
   running: {
     domains: ["switch", "binary_sensor", "input_boolean", "fan", "climate", "water_heater", "sensor", "number", "light"],
+    prefer: ["switch", "binary_sensor", "input_boolean"],
   },
   // A fault or a warning: a pressure switch, an error code.
   alarm: { domains: ["binary_sensor", "sensor", "input_boolean"] },
   // Open or closed: a zone valve's end switch, a window contact.
-  open: { domains: ["binary_sensor", "switch", "valve", "cover", "input_boolean"] },
+  open: { domains: ["binary_sensor", "switch", "valve", "cover", "input_boolean"], prefer: ["binary_sensor", "valve", "switch"] },
   temperature: {
     domains: ["sensor", "number", "input_number", "climate", "water_heater"],
     deviceClass: "temperature",
@@ -53,8 +54,12 @@ export const KINDS = {
   },
   speed: { domains: ["sensor", "number", "input_number", "fan"], units: ["rpm", "%", "Hz"] },
   number: { domains: ["sensor", "number", "input_number"] },
-  // Anything shown as text: an operating mode, a status.
-  state: { domains: null },
+  // Anything shown as text: a temperature, an operating mode, a status. Any
+  // entity fits; measured and settable values come first in the picker.
+  state: {
+    domains: null,
+    prefer: ["sensor", "climate", "water_heater", "number", "input_number", "select", "input_select", "input_text"],
+  },
 };
 
 /** Whether an entity suits a kind: "ok", "warning" (usable, odd) or "error". */
@@ -77,15 +82,22 @@ export function checkEntity(kind, stateObj) {
   return "ok";
 }
 
-/** Entities of hass ordered best first, for the editor's picker. */
+/**
+ * Entities of hass ordered best first, for the editor's picker: the right
+ * device class, then a preferred domain, then any other that fits, then the
+ * odd ones.
+ */
 export function candidates(kind, states) {
+  const spec = KINDS[kind] || {};
   const ranked = [];
   for (const stateObj of Object.values(states || {})) {
     const fit = checkEntity(kind, stateObj);
     if (fit === "error") continue;
     const attrs = stateObj.attributes || {};
-    const named = KINDS[kind] && KINDS[kind].deviceClass === attrs.device_class;
-    ranked.push({ stateObj, rank: fit === "ok" ? (named ? 0 : 1) : 2 });
+    const domain = stateObj.entity_id.split(".")[0];
+    const named = Boolean(spec.deviceClass) && spec.deviceClass === attrs.device_class;
+    const preferred = Boolean(spec.prefer) && spec.prefer.includes(domain);
+    ranked.push({ stateObj, rank: fit === "ok" ? (named || preferred ? 0 : 1) : 2 });
   }
   ranked.sort(
     (a, b) => a.rank - b.rank || a.stateObj.entity_id.localeCompare(b.stateObj.entity_id)

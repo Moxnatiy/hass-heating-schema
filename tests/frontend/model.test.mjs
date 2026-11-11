@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { normalize, resolveAll, canConnect, problems } from "../../custom_components/heating_schema/frontend/core/model.js";
-import { checkEntity } from "../../custom_components/heating_schema/frontend/core/bindings.js";
+import { checkEntity, candidates } from "../../custom_components/heating_schema/frontend/core/bindings.js";
 import { layPipe } from "../../custom_components/heating_schema/frontend/core/edits.js";
 import { sampleDoc, entity } from "./fixtures.mjs";
 
@@ -101,4 +101,21 @@ test("an unknown element type is kept, not lost", () => {
   const d = normalize({ id: "u", name: "u", nodes: [{ id: "x", type: "from_the_future", x: 0, y: 0 }], pipes: [] });
   assert.equal(d.nodes.length, 1);
   assert.ok(problems(d, resolveAll(d), null).some((p) => p.code === "unknown_type"));
+});
+
+test("a value badge takes any entity, sensors offered first", () => {
+  const states = Object.fromEntries(
+    [
+      entity("button.restart", "unknown"),
+      entity("binary_sensor.door", "off", { device_class: "door" }),
+      entity("input_boolean.away", "off"),
+      entity("sensor.flow", 42.5, { unit_of_measurement: "°C", device_class: "temperature" }),
+      entity("select.mode", "eco"),
+    ].map((s) => [s.entity_id, s])
+  );
+  const ids = candidates("state", states).map((s) => s.entity_id);
+  assert.equal(ids.length, 5, "nothing is left out");
+  assert.deepEqual(ids.slice(0, 2), ["select.mode", "sensor.flow"]);
+  // A temperature still prefers temperature sensors over other numbers.
+  assert.deepEqual(candidates("temperature", states).map((s) => s.entity_id), ["sensor.flow"]);
 });

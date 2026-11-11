@@ -94,6 +94,24 @@ export const SCHEMA_CSS = `
   .hs-sun-ray { fill: none; stroke: #ffca28; stroke-width: 2.5; stroke-linecap: round; }
   .hs-magnet { fill: none; stroke: #e53935; stroke-width: 2; }
 
+  /* Drawing: lines and frames. The colour is the group's, the stroke its own. */
+  .hs-draw { color: color-mix(in srgb, var(--hs-ink) 75%, transparent); pointer-events: none; }
+  .hs-draw-grey { color: var(--hs-muted); }
+  .hs-draw-red { color: #e53935; }
+  .hs-draw-blue { color: #1e88e5; }
+  .hs-draw-green { color: var(--hs-run); }
+  .hs-draw-orange { color: #fb8c00; }
+  .hs-draw-line { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .hs-draw-thin .hs-draw-line { stroke-width: 1.5; }
+  .hs-draw-thick .hs-draw-line { stroke-width: 4; }
+  .hs-stroke-dashed .hs-draw-line { stroke-dasharray: 10 7; stroke-linecap: butt; }
+  .hs-stroke-dotted .hs-draw-line { stroke-dasharray: 0.1 7; }
+  .hs-stroke-dash_dot .hs-draw-line { stroke-dasharray: 12 6 0.1 6; }
+  .hs-draw-thick.hs-stroke-dotted .hs-draw-line { stroke-dasharray: 0.1 10; }
+  .hs-draw-line.hs-draw-tint { fill: currentColor; fill-opacity: 0.08; }
+  .hs-draw-head { fill: currentColor; stroke: none; }
+  .hs-hit-stroke { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+
   .hs-pipe-halo { fill: none; stroke: var(--hs-bg); stroke-width: 11; stroke-linejoin: round; }
   .hs-pipe { fill: none; stroke: var(--hs-medium); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
   .hs-flow { fill: none; stroke: rgba(255, 255, 255, 0.85); stroke-width: 2; stroke-dasharray: 6 18; stroke-linecap: round; opacity: 0; }

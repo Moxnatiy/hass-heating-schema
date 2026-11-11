@@ -6,7 +6,7 @@ import { route, moveLeg } from "../../custom_components/heating_schema/frontend/
 import { normalize, resolveAll, portWorld } from "../../custom_components/heating_schema/frontend/core/model.js";
 import { layPipe, branchPipe, scaleNodes } from "../../custom_components/heating_schema/frontend/core/edits.js";
 import { worldSide, worldBox } from "../../custom_components/heating_schema/frontend/core/geometry.js";
-import { computeRoutes } from "../../custom_components/heating_schema/frontend/core/render.js";
+import { computeRoutes, SchemaRenderer } from "../../custom_components/heating_schema/frontend/core/render.js";
 import { sampleDoc } from "./fixtures.mjs";
 
 const orthogonal = (points) => points.slice(1).every((p, i) => p.x === points[i].x || p.y === points[i].y);
@@ -51,6 +51,29 @@ test("the stub ends stay route points, so the first and last legs are the stubs"
   const points = route({ x: 0, y: 0, side: "r" }, { x: 200, y: 0, side: "l" });
   assert.deepEqual(points[1], { x: 20, y: 0 });
   assert.deepEqual(points[points.length - 2], { x: 180, y: 0 });
+});
+
+test("a drawn frame lies under the pipes and is grabbed only on its outline", () => {
+  const doc = normalize({
+    id: "d",
+    name: "d",
+    nodes: [
+      { id: "pump", type: "pump", x: 40, y: 40 },
+      { id: "room", type: "frame", x: 0, y: 0 },
+      { id: "named", type: "frame", x: 400, y: 0, label: "Boiler room" },
+    ],
+    pipes: [],
+  });
+  const root = { innerHTML: "" };
+  new SchemaRenderer(root, { editing: true }).setDocument(doc, resolveAll(doc));
+  const html = root.innerHTML;
+  const under = html.slice(0, html.indexOf('<g class="hs-pipes">'));
+  assert.ok(under.includes('data-node="room"') && !under.includes('data-node="pump"'));
+  const room = under.slice(under.indexOf('data-node="room"'), under.indexOf('data-node="named"'));
+  assert.ok(!room.includes('class="hs-hit"'), "no box to catch clicks inside the frame");
+  assert.ok(room.includes("hs-hit-stroke"));
+  assert.ok(!room.includes("hs-label"), "an unnamed frame shows no name");
+  assert.ok(under.includes(">Boiler room<"));
 });
 
 test("a pipe is stored from outlet to inlet whichever end it was drawn from", () => {

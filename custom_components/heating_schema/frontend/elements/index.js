@@ -27,6 +27,7 @@ import airVent from "./valves/air-vent.js";
 import radiator from "./consumers/radiator.js";
 import ufh from "./consumers/ufh.js";
 import fanCoil from "./consumers/fan-coil.js";
+import towelRail from "./consumers/towel-rail.js";
 import dhwTap from "./consumers/dhw-tap.js";
 import coldWaterInlet from "./water/cold-water-inlet.js";
 import drain from "./water/drain.js";
@@ -34,8 +35,9 @@ import { thermometer, manometer, flowmeter, heatMeter } from "./sensors/gauges.j
 import outdoorSensor from "./sensors/outdoor-sensor.js";
 import text from "./annotations/text.js";
 import value from "./annotations/value.js";
+import { line, dashedLine, arrow, frame, circle, triangleShape } from "./drawing/shapes.js";
 
-export const CATEGORIES = ["sources", "storage", "hydraulics", "valves", "consumers", "water", "sensors", "annotations"];
+export const CATEGORIES = ["sources", "storage", "hydraulics", "valves", "consumers", "water", "sensors", "annotations", "drawing"];
 
 const LIBRARY = [
   heatPump,
@@ -61,6 +63,7 @@ const LIBRARY = [
   radiator,
   ufh,
   fanCoil,
+  towelRail,
   dhwTap,
   coldWaterInlet,
   drain,
@@ -71,6 +74,12 @@ const LIBRARY = [
   outdoorSensor,
   text,
   value,
+  line,
+  dashedLine,
+  arrow,
+  frame,
+  circle,
+  triangleShape,
 ];
 
 export const ELEMENTS = Object.fromEntries(LIBRARY.map((def) => [def.type, def]));

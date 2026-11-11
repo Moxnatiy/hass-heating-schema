@@ -47,11 +47,13 @@ export class SchemaRenderer {
     this.routes = computeRoutes(doc, defs);
     this._nodeSignatures.clear();
     const pipes = doc.pipes.map((pipe) => this._pipe(pipe)).join("");
-    const nodes = doc.nodes
-      .filter((node) => defs.has(node.id))
-      .map((node) => `<g class="hs-node" data-node="${esc(node.id)}">${this._nodeInner(node)}</g>`)
-      .join("");
-    this.root.innerHTML = `<g class="hs-pipes">${pipes}</g><g class="hs-nodes">${nodes}</g>`;
+    // Drawings (lines, frames) lie under the pipes; the elements over them.
+    const group = (under) =>
+      doc.nodes
+        .filter((node) => defs.has(node.id) && Boolean(defs.get(node.id).under) === under)
+        .map((node) => `<g class="hs-node" data-node="${esc(node.id)}">${this._nodeInner(node)}</g>`)
+        .join("");
+    this.root.innerHTML = `<g class="hs-under">${group(true)}</g><g class="hs-pipes">${pipes}</g><g class="hs-nodes">${group(false)}</g>`;
     if (this.live) this.setLive(this.live, true);
   }
 
@@ -142,13 +144,14 @@ export class SchemaRenderer {
     const ports = this.options.editing || this.options.showPorts ? this._ports(node, def, connected) : "";
     // An invisible box under the drawing, so an element with an open or
     // transparent body is grabbed anywhere inside it, not only on its lines.
-    // The ports come after it and stay on top.
-    const hit = `<rect class="hs-hit" width="${def.w}" height="${def.h}"/>`;
+    // The ports come after it and stay on top. A drawing that is all outline
+    // (a frame) brings its own grip along its strokes instead.
+    const hit = def.outlineHit ? "" : `<rect class="hs-hit" width="${def.w}" height="${def.h}"/>`;
     return `<g class="hs-symbol${live.flowing ? " hs-flowing-node" : ""}" transform="${transform}">${hit}${body}</g>${upright}${ports}`;
   }
 
   _label(node, def) {
-    if (def.hideLabel) return "";
+    if (typeof def.hideLabel === "function" ? def.hideLabel(node) : def.hideLabel) return "";
     const box = worldBox(node, def);
     const name = node.label || elementName(node.type);
     // Text is centred on its y: high enough that the letters and their halo

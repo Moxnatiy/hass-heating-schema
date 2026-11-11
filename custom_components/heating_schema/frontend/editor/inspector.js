@@ -15,6 +15,7 @@ import { problems } from "../core/model.js";
 import { t, has, elementName, portName, bindingName } from "../core/i18n.js";
 import { scaleOf } from "../core/geometry.js";
 import { iconButton } from "./icon.js";
+import { pickEntity } from "./dialog.js";
 
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -50,7 +51,6 @@ export class Inspector {
       this.container.innerHTML = "";
       return;
     }
-    this._lists = new Map();
     let body;
     const nodes = this.state.selectedNodes();
     const pipe = this.state.selectedPipe();
@@ -58,10 +58,7 @@ export class Inspector {
     else if (nodes.length === 1) body = this._node(nodes[0]);
     else if (nodes.length > 1) body = this._many(nodes);
     else body = this._schema();
-    const lists = [...this._lists.entries()]
-      .map(([id, options]) => `<datalist id="${id}">${options}</datalist>`)
-      .join("");
-    this.container.innerHTML = body + lists;
+    this.container.innerHTML = body;
     this.container.toggleAttribute("inert", !this.host.editable());
     if (focus) {
       const field = this.container.querySelector(`[data-key="${CSS.escape(focus)}"]`);
@@ -173,8 +170,12 @@ export class Inspector {
     return `
       <div class="hs-binding">
         <label class="hs-field"><span>${esc(bindingName(binding.key))} ${mark}</span>
-          <input data-binding="${binding.key}" data-key="binding.${binding.key}" list="${this._list(binding.kind)}"
-            value="${esc(entityId)}" placeholder="${esc(t("inspector.entity_placeholder"))}" autocomplete="off" spellcheck="false"></label>
+          ${this._entityField(
+            `data-binding="${binding.key}" data-key="binding.${binding.key}"`,
+            binding.kind,
+            entityId,
+            `${node.label || elementName(node.type)}: ${bindingName(binding.key)}`
+          )}</label>
         <small class="hs-kind">${esc(t("inspector.hint_kind", { kind: t(`kind.${binding.kind}`) }))}</small>
         ${hint}${now}
         ${entityId ? `<label class="hs-check hs-small-check"><input type="checkbox" data-show="${binding.key}" data-default="${binding.show ? 1 : 0}" data-key="show.${binding.key}" ${shown ? "checked" : ""}> ${t("inspector.on_drawing")}</label>` : ""}
@@ -227,8 +228,12 @@ export class Inspector {
       <label class="hs-field"><span>${t("inspector.pipe_label")}</span>
         <input data-pipe-field="label" data-key="pipe.label" value="${esc(pipe.label)}"></label>
       <label class="hs-field"><span>${t("inspector.pipe_temperature")}</span>
-        <input data-pipe-binding="temperature" data-key="pipe.temperature" list="${this._list("temperature")}"
-          value="${esc((pipe.bindings || {}).temperature || "")}" placeholder="${esc(t("inspector.entity_placeholder"))}" autocomplete="off"></label>
+        ${this._entityField(
+          `data-pipe-binding="temperature" data-key="pipe.temperature"`,
+          "temperature",
+          (pipe.bindings || {}).temperature || "",
+          t("inspector.pipe_temperature")
+        )}</label>
       ${own.length ? this._problemList(own, false) : ""}`;
   }
 
@@ -258,27 +263,52 @@ export class Inspector {
     return hass ? hass.states : null;
   }
 
-  /** The id of a datalist of entities that suit a kind, made once per render. */
-  _list(kind) {
-    const id = `hs-entities-${kind}`;
-    if (!this._lists.has(id)) {
-      const options = candidates(kind, this._states() || {})
-        .slice(0, 400)
-        .map((s) => `<option value="${esc(s.entity_id)}">${esc(s.attributes.friendly_name || "")}</option>`)
-        .join("");
-      this._lists.set(id, options);
-    }
-    return id;
+  /**
+   * A field showing the bound entity by name and id, whole. A click opens
+   * the entity picker, a large dialog in the middle of the screen.
+   */
+  _entityField(attrs, kind, entityId, title) {
+    const states = this._states();
+    const stateObj = entityId && states ? states[entityId] : null;
+    const name = stateObj ? stateObj.attributes.friendly_name || entityId : "";
+    const shown = entityId
+      ? `<b>${esc(name || entityId)}</b>${name && name !== entityId ? `<small>${esc(entityId)}</small>` : ""}`
+      : `<span class="hs-entity-empty">${esc(t("inspector.entity_placeholder"))}</span>`;
+    return `<button type="button" class="hs-entity-field" data-action="pick" ${attrs}
+      data-entity-kind="${kind}" data-value="${esc(entityId)}" data-title="${esc(title)}">${shown}</button>`;
+  }
+
+  /** Open the entity picker for a field, and write back what is picked. */
+  async _pick(field) {
+    const hass = this.host.hass();
+    if (!hass) return;
+    const kind = field.dataset.entityKind;
+    const answer = await pickEntity(this.container.getRootNode(), {
+      title: field.dataset.title,
+      hass,
+      value: field.dataset.value || "",
+      list: (everything) =>
+        everything
+          ? Object.values(hass.states).sort((a, b) => a.entity_id.localeCompare(b.entity_id))
+          : candidates(kind, hass.states),
+      fit: (stateObj) => checkEntity(kind, stateObj),
+      now: (stateObj) => readBinding(kind, stateObj).text,
+    });
+    if (answer === null || answer === (field.dataset.value || "")) return;
+    this._apply(field.dataset, answer);
   }
 
   // ---- edits ---------------------------------------------------------------------------
 
   _change(e) {
     const el = e.target;
-    const d = el.dataset;
+    return this._apply(el.dataset, el.type === "checkbox" ? el.checked : el.value);
+  }
+
+  /** Write a field's new value: d is the field's dataset. */
+  _apply(d, value) {
     const node = this.state.selectedNodes()[0];
     const pipe = this.state.selectedPipe();
-    const value = el.type === "checkbox" ? el.checked : el.value;
 
     if (d.doc) return this.state.commit((doc) => (doc[d.doc] = String(value).trim() || doc[d.doc]));
     if (d.setting) return this.state.commit((doc) => (doc.settings[d.setting] = value));
@@ -343,6 +373,7 @@ export class Inspector {
     else if (action === "reset-route") this.commands.resetRoute(this.state.selection.pipe);
     else if (action === "focus") this.host.focusNode(button.dataset.node);
     else if (action === "focus-pipe") this.state.select([], button.dataset.pipe);
+    else if (action === "pick") this._pick(button);
   }
 }
 

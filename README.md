@@ -81,9 +81,10 @@ an element by name.
 The inspector on the right holds the selected element's label and parameters.
 What the parameters change depends on the element. Some examples:
 
-- **Hot water tank:** one, two or three coils, extra hot water outlets, a
-  second cold inlet, a circulation return, a drain connection and an electric
-  heater.
+- **Hot water tank:** one, two or three coils; up to three hot water outlets
+  and up to three cold inlets, each set beside its main connection; the hot
+  water on the side or on top, the cold on the side or underneath; a
+  circulation return, a drain connection and an electric heater.
 - **Manifold:** the number of loops; the heating water fed from the left, the
   right or both ends; all connections pointing down, the supplies up and the
   returns down, or pairs on both sides, which halves the manifold's length.
@@ -93,6 +94,14 @@ What the parameters change depends on the element. Some examples:
 - **Pump:** how it is controlled, and whether its impeller or its triangle
   turns while it runs.
 - **Radiator:** side, cross or bottom connection.
+- **Heated towel rail:** bottom, side or cross connection; on the heating or
+  on the hot water circulation; an electric heater, so it warms in summer too.
+- **Lines and shapes:** length, or width and height; solid, dashed, dotted or
+  dash-dot; thickness, colour, arrows at the ends of a line, rounded corners
+  for a frame and a light fill for a shape. Drawings lie under the pipes and
+  are grabbed on their lines only, so a frame drawn around a boiler room
+  never gets in the way of what is inside it. A drawing shows its name only
+  when given one.
 
 ### 3. Draw pipes
 
@@ -123,7 +132,11 @@ Each element lists the values it can show under **Live values**, such as a
 heat pump's running state, its supply, return and outdoor temperatures, its
 power and its COP. Type or pick an entity for each one.
 
-- The list offers entities of the expected kind first.
+- A click on the field opens a large search in the middle of the screen, like
+  Home Assistant's quick search: names, ids, devices and areas are shown
+  whole, with icons and current values, and arrows and Enter pick one. It
+  offers the entities of the expected kind; untick "Only entities that fit"
+  to see all of them, or type any entity id to use it.
 - A ✓ shows that the entity fits, and a warning shows that it does not.
 - The current value is shown under the field.
 - **Shown on the drawing** decides whether the value appears on the schema.
@@ -179,10 +192,11 @@ height: 400               # optional; without it the card keeps the drawing's pr
 | Storage | hot water tank, buffer tank, expansion vessel |
 | Pumps and distribution | circulation pump, boiler loading unit (of the Laddomat 21 kind), hydraulic separator, plate heat exchanger, manifold, junction |
 | Valves and fittings | three-way valve, shut-off valve, zone valve, check valve, balancing valve, safety valve, strainer, air vent |
-| Heat emitters and taps | radiator, underfloor heating loop, fan coil, hot water tap |
+| Heat emitters and taps | radiator, underfloor heating loop, fan coil, heated towel rail, hot water tap |
 | Water supply | cold water supply, drain |
 | Sensors and meters | thermometer, pressure gauge, flow meter, heat meter, outdoor sensor |
 | Labels | text, live value |
+| Drawing | line, dashed line, arrow, frame, circle or ellipse, triangle |
 
 ## Keyboard shortcuts
 

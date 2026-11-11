@@ -89,6 +89,16 @@ export const PANEL_CSS = `
     width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid var(--divider-color);
     background: var(--primary-background-color);
   }
+  /* A bound entity, shown whole; a click opens the entity picker. */
+  .hs-entity-field {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; box-sizing: border-box;
+    padding: 7px 9px; border-radius: 6px; border: 1px solid var(--divider-color); text-align: left;
+    background: var(--primary-background-color); color: inherit; font: inherit; cursor: pointer;
+  }
+  .hs-entity-field:hover, .hs-entity-field:focus-visible { border-color: var(--primary-color); outline: none; }
+  .hs-entity-field b { font-weight: 500; overflow-wrap: anywhere; }
+  .hs-entity-field small { color: var(--secondary-text-color); font-size: 11.5px; overflow-wrap: anywhere; }
+  .hs-entity-empty { color: var(--secondary-text-color); }
   .hs-with-unit { display: flex; align-items: center; gap: 6px; }
   .hs-with-unit em { font-style: normal; color: var(--secondary-text-color); min-width: 28px; }
   .hs-check { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }

@@ -95,3 +95,58 @@ test("a two-sided manifold puts odd loops down and even loops up, two to a place
   // A pair up and a pair down share a place, supply on the left of each.
   assert.deepEqual([at("out_1").x, at("ret_1").x, at("out_2").x, at("ret_2").x], [60, 100, 60, 100]);
 });
+
+test("a towel rail on the hot water circulation takes hot water, not heating", () => {
+  const heating = resolve({ id: "t", type: "towel_rail", x: 0, y: 0, params: {} });
+  const dhw = resolve({ id: "t", type: "towel_rail", x: 0, y: 0, params: { purpose: "dhw", connection: "cross" } });
+  assert.deepEqual(heating.ports.map((p) => [p.id, p.family, p.side]), [["in", "heating", "b"], ["out", "heating", "b"]]);
+  assert.deepEqual(dhw.ports.map((p) => [p.id, p.family, p.side]), [["in", "dhw", "l"], ["out", "dhw", "r"]]);
+  assert.ok(!heating.bindings.some((b) => b.key === "heater"));
+  const hybrid = resolve({ id: "t", type: "towel_rail", x: 0, y: 0, params: { heater: true } });
+  assert.ok(hybrid.bindings.some((b) => b.key === "heater"));
+});
+
+test("a hot water tank's extra outlets and inlets sit beside the main ones", () => {
+  const def = resolve({
+    id: "t",
+    type: "dhw_tank",
+    x: 0,
+    y: 0,
+    params: { hot_outlets: 3, cold_inlets: 3, circulation: true, drain: true },
+  });
+  const at = (id) => def.ports.find((p) => p.id === id);
+  const right = (id) => [at(id).side, at(id).x, at(id).y];
+  assert.deepEqual(["hot_out", "hot_out_2", "hot_out_3"].map(right), [["r", 100, 40], ["r", 100, 60], ["r", 100, 80]]);
+  assert.deepEqual(["cold_in", "cold_in_2", "cold_in_3"].map(right), [["r", 100, 160], ["r", 100, 140], ["r", 100, 120]]);
+  // The circulation and the drain stay where they were.
+  assert.deepEqual(right("circ_in"), ["r", 100, 100]);
+  assert.deepEqual([at("drain").side, at("drain").x], ["b", 30]);
+  // Every cold inlet reaches every hot outlet.
+  const passages = def.passages(def.node, {});
+  for (const c of ["cold_in_2", "cold_in_3"]) assert.ok(passages.some(([a, b]) => a === c && b === "hot_out_3"));
+});
+
+test("a hot water tank's hot water can leave on top and cold come in underneath", () => {
+  const def = resolve({
+    id: "t",
+    type: "dhw_tank",
+    x: 0,
+    y: 0,
+    params: { hot_outlets: 3, cold_inlets: 3, hot_connection: "top", cold_connection: "bottom", drain: true },
+  });
+  const where = (id) => {
+    const p = def.ports.find((q) => q.id === id);
+    return [p.side, p.x, p.y];
+  };
+  assert.deepEqual(["hot_out", "hot_out_2", "hot_out_3"].map(where), [["t", 50, 0], ["t", 70, 0], ["t", 30, 0]]);
+  assert.deepEqual(["cold_in", "cold_in_2", "cold_in_3"].map(where), [["b", 50, 200], ["b", 70, 200], ["b", 90, 200]]);
+  assert.deepEqual(where("drain"), ["b", 30, 200]);
+});
+
+test("a drawn line or frame keeps to the grid whatever length is typed", () => {
+  assert.deepEqual([resolve({ id: "l", type: "line", x: 0, y: 0, params: { length: 333 } }).w], [340]);
+  assert.equal(resolve({ id: "l", type: "dashed_line", x: 0, y: 0, params: { length: 5 } }).w, 40);
+  const frame = resolve({ id: "f", type: "frame", x: 0, y: 0, params: { width: 250, height: 90 } });
+  assert.deepEqual([frame.w, frame.h], [260, 100]);
+  assert.equal(resolve({ id: "l", type: "dashed_line", x: 0, y: 0, params: {} }).node.params.stroke, "dashed");
+});

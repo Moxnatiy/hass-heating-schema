@@ -20,7 +20,7 @@ import { GRID } from "../core/geometry.js";
  */
 export function handleKey(e, host) {
   const target = e.composedPath ? e.composedPath()[0] : e.target;
-  if (target && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) return false;
+  if (target && (/^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName) || target.isContentEditable)) return false;
   const mod = e.ctrlKey || e.metaKey;
   const key = e.key.toLowerCase();
 
