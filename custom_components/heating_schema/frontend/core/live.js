@@ -38,13 +38,8 @@ export function evaluate(doc, defs, states) {
 
   const graph = buildGraph(doc, defs, nodes);
   for (const { node, def, speed } of drivers(doc, defs, nodes)) {
-    const ports = def.ports.map((p) => p.id);
-    const outlet = def.ports.find((p) => p.flow === "out");
-    const inlet = def.ports.find((p) => p.flow === "in");
-    if (!outlet || !inlet || !ports.length) continue;
-    const starts = [`${node.id}:${outlet.id}`];
-    const ends = [`${node.id}:${inlet.id}`];
-    mark(graph, starts, ends, speed, pipes, nodes, node.id);
+    const loop = pumpLoop(graph, node, def);
+    if (loop) mark(graph, loop.starts, loop.ends, speed, pipes, nodes, loop.skip, node.id);
   }
 
   const sources = [];
@@ -131,6 +126,37 @@ function buildGraph(doc, defs, nodes) {
   return { edges, out, in: into };
 }
 
+/**
+ * Where a driving element's pump pushes from and draws back to.
+ *
+ * A plain pump pushes out of its outlet and draws into its inlet, and the
+ * loop may not pass through the pump itself. An element with a pump inside
+ * among other passages (a boiler loading unit) names its pump's outlet
+ * (pumpOutlet): the pump draws from every port with an open passage to that
+ * outlet, and only those passages are the pump; the element's other passages
+ * are part of the loop.
+ */
+function pumpLoop(graph, node, def) {
+  if (def.pumpOutlet) {
+    const outlet = `${node.id}:${def.pumpOutlet(def.node)}`;
+    const pumpEdges = graph.edges.filter((e) => e.node === node.id && e.v === outlet);
+    if (!pumpEdges.length) return null;
+    return {
+      starts: [outlet],
+      ends: pumpEdges.map((e) => e.u),
+      skip: (edge) => edge.node === node.id && edge.v === outlet,
+    };
+  }
+  const outlet = def.ports.find((p) => p.flow === "out");
+  const inlet = def.ports.find((p) => p.flow === "in");
+  if (!outlet || !inlet) return null;
+  return {
+    starts: [`${node.id}:${outlet.id}`],
+    ends: [`${node.id}:${inlet.id}`],
+    skip: (edge) => edge.node === node.id,
+  };
+}
+
 function portOf(defs, end) {
   const def = defs.get(end.node);
   return def ? def.ports.find((p) => p.id === end.port) : null;
@@ -139,8 +165,9 @@ function portOf(defs, end) {
 /**
  * Vertices reachable from the starts along the edges of `adjacency`.
  *
- * `skip` is the driving pump: the search must go round the loop, not back
- * through the pump itself. `without` is a pipe the search may not use.
+ * `skip(edge)` is true for the driving pump's own passages: the search must go
+ * round the loop, not back through the pump itself. `without` is a pipe the
+ * search may not use.
  */
 function reach(adjacency, starts, skip = null, without = null) {
   const seen = new Set(starts);
@@ -148,7 +175,7 @@ function reach(adjacency, starts, skip = null, without = null) {
   while (queue.length) {
     const vertex = queue.shift();
     for (const edge of adjacency.get(vertex) || []) {
-      if (skip && edge.node === skip) continue;
+      if (skip && skip(edge)) continue;
       if (without && edge.pipe === without) continue;
       const next = edge.u === vertex ? edge.v : edge.u;
       if (seen.has(next)) continue;
@@ -167,7 +194,7 @@ function reach(adjacency, starts, skip = null, without = null) {
  * to it, but only by going back through the very same pipe. Such a pipe flows
  * only if its two ends are joined to the loop without it.
  */
-function mark(graph, starts, ends, speed, pipes, nodes, skip = null) {
+function mark(graph, starts, ends, speed, pipes, nodes, skip = null, driver = null) {
   const forward = reach(graph.out, starts, skip);
   const backward = reach(graph.in, ends, skip);
   const twoWay = new Set();
@@ -191,7 +218,7 @@ function mark(graph, starts, ends, speed, pipes, nodes, skip = null) {
   };
 
   for (const edge of graph.edges) {
-    if (skip && edge.node === skip) continue;
+    if (skip && skip(edge)) continue;
     if (!forward.has(edge.u) || !backward.has(edge.v)) continue;
     if (edge.pipe) {
       if (!onLoop(edge)) continue;
@@ -204,5 +231,5 @@ function mark(graph, starts, ends, speed, pipes, nodes, skip = null) {
       nodes.get(edge.node).flowing = true;
     }
   }
-  if (skip) nodes.get(skip).flowing = true;
+  if (driver) nodes.get(driver).flowing = true;
 }

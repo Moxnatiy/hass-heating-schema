@@ -142,6 +142,65 @@ export function portSpec(doc, defs, end) {
   return def ? def.ports.find((p) => p.id === end.port) || null : null;
 }
 
+/** An element's state when nothing is known: every valve as drawn. */
+const UNKNOWN_LIVE = { values: {}, on: null, alarm: false, flowing: false };
+
+/** Every way water may take through an element, whatever its live state. */
+function possiblePassages(def) {
+  return def && def.passages ? def.passages(def.node, UNKNOWN_LIVE, def.ports) : [];
+}
+
+/** The ports a port leads to inside its element. */
+function portsBeyond(def, portId) {
+  const beyond = new Set();
+  for (const [a, b] of possiblePassages(def)) {
+    if (a === portId) beyond.add(b);
+    if (b === portId) beyond.add(a);
+  }
+  return beyond;
+}
+
+/**
+ * The medium already flowing on the far side of a port: a pump's outlet
+ * carries what reaches its inlet. Null when nothing is piped there yet.
+ */
+export function mediumThrough(doc, defs, end) {
+  const beyond = portsBeyond(defs.get(end.node), end.port);
+  for (const pipe of doc.pipes) {
+    for (const side of [pipe.from, pipe.to]) {
+      if (side.node === end.node && beyond.has(side.port)) return pipe.medium;
+    }
+  }
+  return null;
+}
+
+/**
+ * Pipes whose circuit changes inside an element without a heat exchanger:
+ * a pump with heating water on one side and hot water on the other.
+ */
+function mediaAcross(doc, defs, list) {
+  // One warning per element: which of its pipes is wrong is for the user to say.
+  const flagged = new Set();
+  for (const node of doc.nodes) {
+    const def = defs.get(node.id);
+    const on = (port) =>
+      doc.pipes.filter(
+        (p) => (p.from.node === node.id && p.from.port === port) || (p.to.node === node.id && p.to.port === port)
+      );
+    for (const [a, b] of possiblePassages(def)) {
+      for (const pa of on(a)) {
+        for (const pb of on(b)) {
+          const fa = (MEDIA[pa.medium] || MEDIA.other).family;
+          const fb = (MEDIA[pb.medium] || MEDIA.other).family;
+          if (familiesCompatible(fa, fb) || flagged.has(node.id)) continue;
+          flagged.add(node.id);
+          list.push({ level: "warning", code: "medium_across", pipe: pb.id, node: node.id });
+        }
+      }
+    }
+  }
+}
+
 /**
  * Everything in the drawing that is technically wrong or doubtful.
  *
@@ -172,6 +231,7 @@ export function problems(doc, defs, states) {
     if (a.flow === "out" && b.flow === "out") list.push({ level: "warning", code: "out_to_out", pipe: pipe.id });
     if (a.flow === "in" && b.flow === "in") list.push({ level: "warning", code: "in_to_in", pipe: pipe.id });
   }
+  mediaAcross(doc, defs, list);
 
   for (const node of doc.nodes) {
     const def = defs.get(node.id);

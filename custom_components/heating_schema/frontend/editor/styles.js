@@ -33,7 +33,9 @@ export const CANVAS_CSS = `
 
 /** The panel around the sheet: bar, palette, inspector. */
 export const PANEL_CSS = `
-  :host { display: block; height: 100%; background: var(--primary-background-color); color: var(--primary-text-color); }
+  /* The viewport's height, not the parent's: since Home Assistant 2026.11 the
+     panel's container is only as tall as its content, so 100% collapses. */
+  :host { display: block; height: 100vh; height: 100dvh; background: var(--primary-background-color); color: var(--primary-text-color); }
   * { box-sizing: border-box; }
   button, select, input { font: inherit; color: inherit; }
   .hs-app { display: flex; flex-direction: column; height: 100%; }

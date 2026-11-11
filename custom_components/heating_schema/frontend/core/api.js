@@ -33,11 +33,16 @@ export class SchemaApi {
   /**
    * Follow one schema: callback(schema) now and after every save, with null
    * once it is deleted. Returns a function that stops following.
+   *
+   * The subscription is not renewed after a reconnect: right after Home
+   * Assistant restarts, the command is not there yet and the renewal would fail
+   * unnoticed. The caller subscribes again on the connection's "ready" event.
    */
   subscribe(schemaId, callback) {
-    return this.hass.connection.subscribeMessage((message) => callback(message.schema), {
-      type: `${PREFIX}/subscribe`,
-      schema_id: schemaId,
-    });
+    return this.hass.connection.subscribeMessage(
+      (message) => callback(message.schema),
+      { type: `${PREFIX}/subscribe`, schema_id: schemaId },
+      { resubscribe: false }
+    );
   }
 }

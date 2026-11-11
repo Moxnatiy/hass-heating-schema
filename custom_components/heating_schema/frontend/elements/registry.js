@@ -15,6 +15,10 @@
 //
 // Optional:
 //   drives(node, live)  → speed > 0 when the element pushes water (a pump)
+//   pumpOutlet(node)    → port id the built-in pump pushes out of, when the
+//                       element holds more than a pump (a loading unit): its
+//                       passages into that port are the pump, the rest are
+//                       part of the loop (core/live.js)
 //   source(node)        → port id where an open circuit begins (the mains)
 //   sink(node, live)    → true when water leaves here (an open tap)
 //   panel               { x, y, align } where listed values go inside the body

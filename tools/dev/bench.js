@@ -58,6 +58,9 @@ const hass = {
       fn({ schema: load()[msg.schema_id] || null });
       return () => listeners.delete(msg.schema_id);
     },
+    // The bench never drops its connection, so "ready" never fires.
+    addEventListener() {},
+    removeEventListener() {},
   },
 };
 

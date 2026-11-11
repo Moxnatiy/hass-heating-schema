@@ -11,6 +11,7 @@ import dhwTank from "./storage/dhw-tank.js";
 import bufferTank from "./storage/buffer-tank.js";
 import expansionVessel from "./storage/expansion-vessel.js";
 import pump from "./hydraulics/pump.js";
+import loadingUnit from "./hydraulics/loading-unit.js";
 import hydraulicSeparator from "./hydraulics/hydraulic-separator.js";
 import plateHx from "./hydraulics/plate-hx.js";
 import manifold from "./hydraulics/manifold.js";
@@ -44,6 +45,7 @@ const LIBRARY = [
   bufferTank,
   expansionVessel,
   pump,
+  loadingUnit,
   hydraulicSeparator,
   plateHx,
   manifold,

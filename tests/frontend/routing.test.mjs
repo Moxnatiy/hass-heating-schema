@@ -103,3 +103,21 @@ test("a pipe from a port facing away goes round its element instead of through i
   });
   assert.equal(crosses, false, JSON.stringify(points));
 });
+
+test("a pipe through a pump or valve carries what already flows on the other side", () => {
+  const doc = normalize({
+    id: "d",
+    name: "d",
+    nodes: [
+      { id: "boiler", type: "boiler", x: 0, y: 0 },
+      { id: "pump", type: "pump", x: 200, y: 0 },
+      { id: "v3", type: "valve_3way", x: 400, y: 0 },
+    ],
+    pipes: [],
+  });
+  const defs = resolveAll(doc);
+  layPipe(doc, defs, { node: "boiler", port: "supply_out" }, { node: "pump", port: "in" }, "dhw");
+  // The last medium drawn was hot water, but the pump's inlet carries heating supply.
+  const { pipe } = layPipe(doc, defs, { node: "pump", port: "out" }, { node: "v3", port: "AB" }, "dhw");
+  assert.equal(pipe.medium, "heating_supply");
+});

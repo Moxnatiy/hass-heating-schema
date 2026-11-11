@@ -3,10 +3,10 @@
 // (amber) or refused (red). Dropping on a pipe branches off it.
 
 import { snap, distanceToSegment } from "../../core/geometry.js";
-import { MEDIA, mediumFor } from "../../core/media.js";
-import { canConnect, portSpec } from "../../core/model.js";
+import { MEDIA } from "../../core/media.js";
+import { canConnect } from "../../core/model.js";
 import { route, pathData } from "../../core/router.js";
-import { layPipe, branchPipe, portAt } from "../../core/edits.js";
+import { layPipe, branchPipe, portAt, newPipeMedium } from "../../core/edits.js";
 import { t } from "../../core/i18n.js";
 
 export function layPipeFrom(canvas, from) {
@@ -40,7 +40,8 @@ export function layPipeFrom(canvas, from) {
       const landing = target && target.kind === "pipe" ? `<path class="hs-branch-target" d="M${target.a.x} ${target.a.y} L${target.b.x} ${target.b.y}"/>` : "";
       if (target && target.kind === "pipe") cls += " hs-temp-ok";
       const points = route(start, { ...end, side: end.side || facing(start, end) });
-      const medium = mediumFor(portSpec(state.doc, state.defs, from), null, canvas.lastMedium);
+      const to = target && target.kind === "port" && target.verdict.ok ? target.end : null;
+      const medium = newPipeMedium(state.doc, state.defs, from, to, canvas.lastMedium);
       const color = (MEDIA[medium] || MEDIA.other).color;
       canvas.setPreview(`${landing}<path class="${cls}" style="--hs-medium:${color}" d="${pathData(points)}"/>`);
     },

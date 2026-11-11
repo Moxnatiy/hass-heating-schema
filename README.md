@@ -172,7 +172,7 @@ height: 400               # optional; without it the card keeps the drawing's pr
 | --- | --- |
 | Heat sources | heat pump, boiler (gas, oil, pellet, solid fuel, electric), solar collector |
 | Storage | hot water tank, buffer tank, expansion vessel |
-| Pumps and distribution | circulation pump, hydraulic separator, plate heat exchanger, manifold, junction |
+| Pumps and distribution | circulation pump, boiler loading unit (of the Laddomat 21 kind), hydraulic separator, plate heat exchanger, manifold, junction |
 | Valves and fittings | three-way valve, shut-off valve, zone valve, check valve, balancing valve, safety valve, strainer, air vent |
 | Heat emitters and taps | radiator, underfloor heating loop, fan coil, hot water tap |
 | Water supply | cold water supply, drain |

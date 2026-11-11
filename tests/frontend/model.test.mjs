@@ -60,6 +60,23 @@ test("a heated system without expansion vessel and safety valve is reported", ()
   assert.ok(codes.includes("no_safety_valve"));
 });
 
+test("hot water on one side of a pump and heating water on the other is reported", () => {
+  const d = doc();
+  d.pipes.push(
+    { id: "p1", from: { node: "boiler", port: "supply_out" }, to: { node: "pump", port: "in" }, medium: "heating_supply", points: [] },
+    { id: "p2", from: { node: "pump", port: "out" }, to: { node: "rad", port: "in" }, medium: "dhw", points: [] }
+  );
+  const found = problems(d, resolveAll(d), null).filter((p) => p.code === "medium_across");
+  assert.deepEqual(found.map((p) => [p.pipe, p.node]), [["p2", "pump"]]);
+  d.pipes[1].medium = "heating_supply";
+  assert.ok(!problems(d, resolveAll(d), null).some((p) => p.code === "medium_across"));
+});
+
+test("the demo schema has no circuit changing inside an element", () => {
+  const d = normalize(sampleDoc());
+  assert.ok(!problems(d, resolveAll(d), null).some((p) => p.code === "medium_across"));
+});
+
 test("a power meter is not a temperature", () => {
   assert.equal(checkEntity("temperature", entity("sensor.p", 5, { unit_of_measurement: "W", device_class: "power" })), "error");
   assert.equal(checkEntity("temperature", entity("sensor.t", 21, { unit_of_measurement: "°C", device_class: "temperature" })), "ok");

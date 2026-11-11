@@ -7,7 +7,27 @@
 
 import { snap, GRID } from "./geometry.js";
 import { MEDIA, mediumFor, mediumFits } from "./media.js";
-import { canConnect, portSpec, portWorld, createNode, uid } from "./model.js";
+import { canConnect, portSpec, portWorld, createNode, mediumThrough, uid } from "./model.js";
+
+/**
+ * The medium for a pipe from port a (to port b, if known yet).
+ *
+ * A port that names its medium decides. Otherwise what already flows through
+ * the element on the far side of either port does: a pipe drawn from a pump's
+ * outlet carries what reaches its inlet. The medium last drawn comes last.
+ */
+export function newPipeMedium(doc, defs, a, b, fallbackMedium) {
+  const pa = portSpec(doc, defs, a);
+  const pb = b ? portSpec(doc, defs, b) : null;
+  if (!(pa && pa.medium) && !(pb && pb.medium)) {
+    for (const end of [a, b]) {
+      if (!end) continue;
+      const medium = mediumThrough(doc, defs, end);
+      if (medium && !(pa && mediumFits(medium, pa)) && !(pb && mediumFits(medium, pb))) return medium;
+    }
+  }
+  return mediumFor(pa, pb, fallbackMedium);
+}
 
 /**
  * Lay a pipe between two ports.
@@ -25,7 +45,7 @@ export function layPipe(doc, defs, a, b, fallbackMedium) {
     id: uid("p"),
     from: { ...a },
     to: { ...b },
-    medium: mediumFor(pa, pb, fallbackMedium),
+    medium: newPipeMedium(doc, defs, a, b, fallbackMedium),
     dn: "",
     label: "",
     points: [],

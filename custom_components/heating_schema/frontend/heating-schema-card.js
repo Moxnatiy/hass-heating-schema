@@ -37,6 +37,20 @@ class HeatingSchemaCard extends HTMLElement {
     this._doc = null;
     this._defs = new Map();
     this._unsubscribe = null;
+    this._connection = null;
+    // After a reconnect, follow the schema again (see SchemaApi.subscribe).
+    this._onReady = () => {
+      if (this.isConnected) this._follow();
+    };
+  }
+
+  /** Listen for reconnects of the current connection, or stop listening. */
+  _listen(on) {
+    const connection = on && this._hass ? this._hass.connection : null;
+    if (connection === this._connection) return;
+    if (this._connection) this._connection.removeEventListener("ready", this._onReady);
+    this._connection = connection;
+    if (connection) connection.addEventListener("ready", this._onReady);
   }
 
   static getConfigElement() {
@@ -67,16 +81,18 @@ class HeatingSchemaCard extends HTMLElement {
       this._language = hass.language;
       setLanguage(hass.language);
     }
+    if (this.isConnected) this._listen(true);
     if (first) this._follow();
-    else if (this._failedAt && Date.now() - this._failedAt > RETRY_MS) this._follow();
     else this._updateLive();
   }
 
   connectedCallback() {
+    this._listen(true);
     if (this._hass && !this._unsubscribe) this._follow();
   }
 
   disconnectedCallback() {
+    this._listen(false);
     this._stop();
   }
 
@@ -90,6 +106,8 @@ class HeatingSchemaCard extends HTMLElement {
   }
 
   _stop() {
+    clearTimeout(this._retry);
+    this._retry = null;
     if (this._unsubscribe) {
       this._unsubscribe.then((stop) => stop()).catch(() => {});
       this._unsubscribe = null;
@@ -99,13 +117,12 @@ class HeatingSchemaCard extends HTMLElement {
   /** Subscribe to the configured schema. */
   _follow() {
     this._stop();
-    this._failedAt = 0;
     if (!this._hass || !this._config) return;
     if (!this._config.schema_id) {
       this._message(t("card.none"));
       return;
     }
-    this._unsubscribe = new SchemaApi(this._hass)
+    const attempt = (this._unsubscribe = new SchemaApi(this._hass)
       .subscribe(this._config.schema_id, (schema) => {
         if (!schema) {
           this._doc = null;
@@ -117,11 +134,15 @@ class HeatingSchemaCard extends HTMLElement {
         this._draw();
       })
       .catch((err) => {
-        this._failedAt = Date.now();
+        if (this._unsubscribe !== attempt) return () => {};
         this._unsubscribe = null;
-        this._message(err && err.code === "unknown_command" ? t("ui.loading") : String(err.message || err));
+        // A drawing already shown stays while the integration comes back.
+        if (!this._doc) {
+          this._message(err && err.code === "unknown_command" ? t("ui.loading") : String(err.message || err));
+        }
+        if (this.isConnected) this._retry = setTimeout(() => this._follow(), RETRY_MS);
         return () => {};
-      });
+      }));
   }
 
   _message(text) {

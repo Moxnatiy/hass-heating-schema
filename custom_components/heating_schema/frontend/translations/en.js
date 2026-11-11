@@ -85,6 +85,7 @@ export default {
   problem: {
     pipe_dangling: "A pipe ends at a connection that no longer exists.",
     pipe_mixes: "A pipe joins circuits that must not mix.",
+    medium_across: "The circuit changes inside this element: check the pipe's medium.",
     medium_wrong: "The pipe's medium does not belong to this connection.",
     medium_role: "A supply pipe meets a return connection, or the other way round.",
     out_to_out: "A pipe joins two outlets.",
@@ -152,6 +153,7 @@ export default {
     buffer_tank: "Buffer tank",
     expansion_vessel: "Expansion vessel",
     pump: "Circulation pump",
+    loading_unit: "Loading unit (Laddomat)",
     hydraulic_separator: "Hydraulic separator",
     plate_hx: "Plate heat exchanger",
     manifold: "Manifold",
@@ -181,6 +183,7 @@ export default {
   param: {
     source: "Heat source",
     power_kw: "Rated output",
+    opening_temp: "Thermostat opening temperature",
     fuel: "Fuel",
     internal_pump: "Built-in circulation pump",
     condensing: "Condensing",
@@ -263,6 +266,9 @@ export default {
     position: "Position",
     a_open: "Path A open",
     mixed_temp: "Mixed temperature",
+    from_boiler_temp: "From the boiler",
+    to_boiler_temp: "To the boiler",
+    from_tank_temp: "From the tank",
     open: "Open",
     room_temp: "Room temperature",
     valve: "Valve",
@@ -278,6 +284,7 @@ export default {
     position: "0 % is path B, 100 % is path A.",
     a_open: "On means path A–AB, off means B–AB.",
     running: "A sensor of power or speed also works: running while above zero.",
+    from_boiler_temp: "Below the opening temperature the water only circles through the boiler; above it, the tank charges.",
   },
   port: {
     supply_out: "Supply",
@@ -319,6 +326,10 @@ export default {
     A: "A",
     B: "B",
     discharge: "Discharge",
+    boiler_flow: "From the boiler",
+    boiler_return: "To the boiler",
+    tank_flow: "To the tank",
+    tank_return: "From the tank",
   },
   card: {
     name: "Heating schema",
