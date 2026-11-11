@@ -7,7 +7,7 @@
 
 import { snap, GRID } from "./geometry.js";
 import { MEDIA, mediumFor, mediumFits } from "./media.js";
-import { canConnect, portSpec, portWorld, createNode, mediumThrough, uid } from "./model.js";
+import { canConnect, portSpec, portWorld, createNode, mediumThrough, mixingAllowed, uid } from "./model.js";
 
 /**
  * The medium for a pipe from port a (to port b, if known yet).
@@ -69,7 +69,7 @@ export function branchPipe(doc, defs, from, pipeId, legA, legB, near) {
   const startPort = portSpec(doc, defs, from);
   if (!pipe || !startPort) return { error: "no_port" };
   if (pipe.from.node === from.node || pipe.to.node === from.node) return { error: "same_element" };
-  if (mediumFits(pipe.medium, startPort) === "error") {
+  if (!mixingAllowed(doc) && mediumFits(pipe.medium, startPort) === "error") {
     return { error: "mix", families: [startPort.family, (MEDIA[pipe.medium] || MEDIA.other).family] };
   }
 

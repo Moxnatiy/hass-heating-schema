@@ -109,6 +109,15 @@ export function createNode(type, x, y) {
 }
 
 /**
+ * Whether the schema lets circuits that must not mix be joined anyway
+ * (settings.allow_mixing): the drawing may show what is really installed,
+ * right or wrong. Such pipes are then warnings instead of refused.
+ */
+export function mixingAllowed(doc) {
+  return Boolean(doc.settings && doc.settings.allow_mixing);
+}
+
+/**
  * Whether a pipe may join two ports, and why not.
  *
  * Returns { ok, level, reason }: level "error" refuses the pipe, "warning"
@@ -129,7 +138,8 @@ export function canConnect(doc, defs, a, b) {
     return { ok: true, level: "warning", reason: "same_element" };
   }
   if (!familiesCompatible(pa.family, pb.family)) {
-    return { ok: false, level: "error", reason: "mix", families: [pa.family, pb.family] };
+    const allowed = mixingAllowed(doc);
+    return { ok: allowed, level: allowed ? "warning" : "error", reason: "mix", families: [pa.family, pb.family] };
   }
   if (pa.flow === "out" && pb.flow === "out") return { ok: true, level: "warning", reason: "out_to_out" };
   if (pa.flow === "in" && pb.flow === "in") return { ok: true, level: "warning", reason: "in_to_in" };
@@ -232,6 +242,11 @@ export function problems(doc, defs, states) {
     if (a.flow === "in" && b.flow === "in") list.push({ level: "warning", code: "in_to_in", pipe: pipe.id });
   }
   mediaAcross(doc, defs, list);
+  if (mixingAllowed(doc)) {
+    for (const problem of list) {
+      if (problem.code === "pipe_mixes" || problem.code === "medium_wrong") problem.level = "warning";
+    }
+  }
 
   for (const node of doc.nodes) {
     const def = defs.get(node.id);

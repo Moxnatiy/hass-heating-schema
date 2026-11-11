@@ -22,6 +22,7 @@ const SETTINGS = [
   ["show_values", true],
   ["animate_flow", true],
   ["show_ports", false],
+  ["allow_mixing", false],
 ];
 
 export class Inspector {

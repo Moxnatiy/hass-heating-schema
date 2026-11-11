@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 import { normalize, resolveAll, canConnect, problems } from "../../custom_components/heating_schema/frontend/core/model.js";
 import { checkEntity } from "../../custom_components/heating_schema/frontend/core/bindings.js";
+import { layPipe } from "../../custom_components/heating_schema/frontend/core/edits.js";
 import { sampleDoc, entity } from "./fixtures.mjs";
 
 const doc = () =>
@@ -31,6 +32,18 @@ test("solar fluid may not enter a heating circuit", () => {
   const d = doc();
   const verdict = canConnect(d, resolveAll(d), { node: "solar", port: "flow_out" }, { node: "rad", port: "in" });
   assert.equal(verdict.ok, false);
+});
+
+test("a schema that allows mixing joins any circuits, with a warning", () => {
+  const d = doc();
+  d.settings.allow_mixing = true;
+  const defs = resolveAll(d);
+  const verdict = canConnect(d, defs, { node: "boiler", port: "supply_out" }, { node: "tank", port: "cold_in" });
+  assert.deepEqual([verdict.ok, verdict.level, verdict.reason], [true, "warning", "mix"]);
+  const { pipe } = layPipe(d, defs, { node: "boiler", port: "supply_out" }, { node: "tank", port: "cold_in" });
+  assert.ok(pipe);
+  const mixes = problems(d, defs, null).filter((p) => p.code === "pipe_mixes" || p.code === "medium_wrong");
+  assert.ok(mixes.length && mixes.every((p) => p.level === "warning"));
 });
 
 test("a boiler may heat a tank's coil", () => {

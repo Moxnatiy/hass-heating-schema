@@ -99,7 +99,9 @@ function facing(start, end) {
 
 export function connectText(verdict) {
   if (verdict.reason === "mix") {
-    return t("connect.mix", { a: t(`family.${verdict.families[0]}`), b: t(`family.${verdict.families[1]}`) });
+    const text = t("connect.mix", { a: t(`family.${verdict.families[0]}`), b: t(`family.${verdict.families[1]}`) });
+    // Refused: say how to join them anyway.
+    return verdict.ok ? text : `${text} ${t("connect.mix_allow")}`;
   }
   return t(`connect.${verdict.reason}`);
 }
